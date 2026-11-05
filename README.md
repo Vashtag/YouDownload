@@ -49,7 +49,7 @@ This creates `dist/YouDownload.exe` on Windows or `dist/YouDownload.app` on macO
 
 ## Publishing a release
 
-1. Push a tag starting with `v`, for example `git tag v1.0.0 && git push origin v1.0.0`.
+1. Push a tag starting with `v` (for example `v1.0.1`), or bump `VERSION` and put `[release]` in the commit message.
 2. GitHub Actions builds both apps and attaches `YouDownload-Windows.exe` and `YouDownload-macOS.zip` to a new release.
 3. The download page always links to the latest release.
 
