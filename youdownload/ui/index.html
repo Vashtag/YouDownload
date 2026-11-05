@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouDownload</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --border: #d2d2d7;
+      --accent: #e5322d;
+      --accent-hover: #c62a25;
+      --error-bg: #fdecec;
+      --ok: #1f9d55;
+      --ok-bg: #e8f6ee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111113;
+        --card: #1c1c1f;
+        --text: #f2f2f4;
+        --muted: #9a9aa0;
+        --border: #34343a;
+        --error-bg: #3a1c1c;
+        --ok-bg: #16301f;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 620px; margin: 0 auto; padding: 32px 16px 24px; }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; }
+    h1 span { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .small { font-size: 0.85rem; }
+    .sub { margin: 6px 0 0; color: var(--muted); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    input, select, button { font: inherit; }
+    input, select {
+      flex: 1 1 240px; width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text);
+    }
+    button {
+      padding: 10px 16px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text); cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .accent:hover:not(:disabled) { background: var(--accent-hover); }
+    .link { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: 0.85rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+
+    .folder { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); padding: 0 4px; margin-bottom: 14px; }
+    .folder span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+
+    .error { background: var(--error-bg); color: var(--accent); padding: 10px 14px; border-radius: 10px; overflow-wrap: anywhere; margin: 0 0 14px; }
+    .note { background: var(--ok-bg); color: var(--ok); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; margin: 0 0 14px; }
+
+    .video { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+    .video img { width: 150px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: var(--bg); }
+    .video h2 { font-size: 1rem; margin: 0 0 4px; overflow-wrap: anywhere; }
+    .video p { margin: 0; font-size: 0.85rem; }
+    @media (max-width: 460px) { .video { flex-direction: column; } .video img { width: 100%; } }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .tab { flex: 1; }
+    .tab.active { background: var(--text); color: var(--card); border-color: var(--text); }
+    .actions { display: flex; gap: 8px; margin-top: 16px; }
+    .actions .accent { flex: 1; font-weight: 600; }
+
+    #progress { margin-top: 14px; }
+    .bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+    #bar-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+    #bar-fill.done { background: var(--ok); }
+    #status { margin: 8px 0 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+    footer { text-align: center; font-size: 0.75rem; margin-top: 18px; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.5); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>You<span>Download</span></h1>
+      <p class="sub">Paste a YouTube link, pick a quality, and download the video or an MP3.</p>
+    </header>
+
+    <p id="note" class="note" hidden></p>
+
+    <form id="url-form" class="card row">
+      <input id="url" type="text" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" spellcheck="false" autofocus>
+      <button id="fetch-btn" type="submit" class="accent">Get options</button>
+    </form>
+
+    <div class="folder">
+      <span id="folder" title="">Downloads</span>
+      <button id="change-folder" type="button" class="link">Change</button>
+      <button id="open-folder" type="button" class="link">Open</button>
+    </div>
+
+    <p id="error" class="error" hidden></p>
+
+    <section id="result" class="card" hidden>
+      <div class="video">
+        <img id="thumb" alt="" onerror="this.hidden=true" onload="this.hidden=false">
+        <div>
+          <h2 id="title"></h2>
+          <p id="meta" class="muted"></p>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-kind="video" role="tab">Video (MP4)</button>
+        <button type="button" class="tab" data-kind="audio" role="tab">Audio (MP3)</button>
+      </div>
+
+      <div class="panel" data-panel="video">
+        <label for="quality">Quality</label>
+        <select id="quality"></select>
+      </div>
+
+      <div class="panel" data-panel="audio" hidden>
+        <label for="bitrate">Bitrate</label>
+        <select id="bitrate">
+          <option value="320">320 kbps (best)</option>
+          <option value="256">256 kbps</option>
+          <option value="192" selected>192 kbps</option>
+          <option value="128">128 kbps (smallest)</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button id="download-btn" type="button" class="accent">Download</button>
+        <button id="cancel-btn" type="button" hidden>Cancel</button>
+      </div>
+
+      <div id="progress" hidden>
+        <div class="bar"><div id="bar-fill"></div></div>
+        <p id="status" class="muted"></p>
+        <p id="done-actions" hidden style="margin:8px 0 0">
+          <button id="show-file" type="button">Show in folder</button>
+        </p>
+      </div>
+    </section>
+
+    <footer class="muted"><span id="version"></span> · Only download content you own or have permission to download.</footer>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let api = null;
+    let current = null;
+    let kind = "video";
+    let jobId = null;
+    let lastFile = null;
+
+    function showError(msg) {
+      $("error").textContent = msg || "";
+      $("error").hidden = !msg;
+    }
+
+    function fmtDuration(s) {
+      if (!s) return "";
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(Math.floor(s % 60)).padStart(2, "0");
+      return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+    }
+
+    function setFolder(path) {
+      $("folder").textContent = "Saving to: " + path;
+      $("folder").title = path;
+    }
+
+    async function refreshState() {
+      const st = await api.get_state();
+      setFolder(st.folder);
+      $("version").textContent = `yt-dlp ${st.ytdlp}`;
+      if (st.update_note) {
+        $("note").textContent = st.update_note;
+        $("note").hidden = false;
+      }
+      if (!st.ffmpeg) showError("ffmpeg wasn't found, so MP3 and HD downloads won't work.");
+      return st;
+    }
+
+    function init(pyApi) {
+      api = pyApi;
+      refreshState();
+      // The yt-dlp update check runs in the background; show its note when it finishes.
+      setTimeout(refreshState, 15000);
+    }
+
+    window.addEventListener("pywebviewready", () => init(window.pywebview.api));
+    if (window.pywebview && window.pywebview.api) init(window.pywebview.api);
+
+    $("change-folder").addEventListener("click", async () => setFolder(await api.choose_folder()));
+    $("open-folder").addEventListener("click", () => api.open_folder(null));
+    $("show-file").addEventListener("click", () => api.open_folder(lastFile));
+
+    // Paste a link and it looks it up right away.
+    $("url").addEventListener("paste", () => setTimeout(() => $("url-form").requestSubmit(), 0));
+
+    $("url-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!api) return;
+      const url = $("url").value.trim();
+      if (!url) return;
+      showError("");
+      $("result").hidden = true;
+      const btn = $("fetch-btn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Loading';
+      try {
+        const info = await api.get_info(url);
+        if (info.error) return showError(info.error);
+        current = info;
+        render(info);
+      } catch (err) {
+        showError(String(err && err.message ? err.message : err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Get options";
+      }
+    });
+
+    function render(info) {
+      $("thumb").src = info.thumbnail || "";
+      $("title").textContent = info.title || "Untitled";
+      $("meta").textContent = [info.uploader, fmtDuration(info.duration)].filter(Boolean).join(" · ");
+      const q = $("quality");
+      q.innerHTML = "";
+      if (!info.qualities.length) q.add(new Option("Best available", "best"));
+      for (const { height, label } of info.qualities) q.add(new Option(label, height));
+      const def = info.qualities.find((x) => x.height <= 1080);
+      if (def) q.value = def.height;
+      $("progress").hidden = true;
+      $("result").hidden = false;
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) =>
+      tab.addEventListener("click", () => {
+        kind = tab.dataset.kind;
+        document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.dataset.panel !== kind));
+      })
+    );
+
+    function setProgress(pct, msg, done) {
+      $("bar-fill").style.width = `${pct}%`;
+      $("bar-fill").classList.toggle("done", !!done);
+      $("status").textContent = msg;
+    }
+
+    function setBusy(busy) {
+      $("download-btn").disabled = busy;
+      $("download-btn").textContent = busy ? "Downloading..." : "Download";
+      $("cancel-btn").hidden = !busy;
+      $("fetch-btn").disabled = busy;
+    }
+
+    $("cancel-btn").addEventListener("click", () => jobId && api.cancel(jobId));
+
+    $("download-btn").addEventListener("click", async () => {
+      if (!current || jobId) return;
+      showError("");
+      $("done-actions").hidden = true;
+      $("progress").hidden = false;
+      setProgress(0, "Starting...");
+      setBusy(true);
+      const value = kind === "video" ? $("quality").value : $("bitrate").value;
+      try {
+        const res = await api.start_download(current.url, kind, String(value));
+        if (res.error) throw new Error(res.error);
+        jobId = res.job_id;
+        while (true) {
+          await new Promise((r) => setTimeout(r, 500));
+          const job = await api.progress(jobId);
+          if (job.status === "done") {
+            lastFile = job.file;
+            setProgress(100, `Saved: ${job.filename}`, true);
+            $("done-actions").hidden = false;
+            break;
+          }
+          if (job.status === "cancelled") { setProgress(0, "Cancelled."); break; }
+          if (job.status === "error") throw new Error(job.message);
+          setProgress(job.progress, job.message);
+        }
+      } catch (err) {
+        $("progress").hidden = true;
+        showError(err.message || String(err));
+      } finally {
+        jobId = null;
+        setBusy(false);
+      }
+    });
+  </script>
+</body>
+</html>
