@@ -1,6 +1,7 @@
-"""YouDownload: a small local web app for downloading YouTube videos or MP3 audio.
+"""YouDownload helper: the local server that does the actual downloading.
 
-Run with:  python app.py   then open http://127.0.0.1:5000
+Run with:  python app.py
+Then open https://vashtag.github.io/YouDownload (or http://127.0.0.1:5000).
 """
 
 import os
@@ -11,10 +12,21 @@ import threading
 import time
 import uuid
 
-from flask import Flask, abort, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, request, send_file, send_from_directory
 import yt_dlp
 
-app = Flask(__name__)
+HERE = os.path.dirname(os.path.abspath(__file__))
+SITE_DIR = os.path.join(HERE, "docs")  # the same static page GitHub Pages serves
+
+app = Flask(__name__, static_folder=None)
+
+# Web pages allowed to talk to this helper. Add your own domain here if you host the page elsewhere.
+ALLOWED_ORIGINS = {
+    "https://vashtag.github.io",
+    "http://127.0.0.1:5000",
+    "http://localhost:5000",
+}
+ALLOWED_ORIGINS.update(o.strip() for o in os.environ.get("EXTRA_ORIGINS", "").split(",") if o.strip())
 
 # Downloaded files live here until they are fetched or expire.
 DOWNLOAD_ROOT = os.path.join(tempfile.gettempdir(), "youdownload")
@@ -64,9 +76,32 @@ def label_for_height(h: int) -> str:
 # ---------------------------------------------------------------------------
 
 
+@app.after_request
+def add_cors_headers(resp):
+    origin = request.headers.get("Origin")
+    if origin in ALLOWED_ORIGINS:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        # Lets Chrome/Edge allow a public https page to reach this localhost server.
+        resp.headers["Access-Control-Allow-Private-Network"] = "true"
+        resp.headers["Vary"] = "Origin"
+    return resp
+
+
 @app.route("/")
 def index():
-    return render_template("index.html", bitrates=AUDIO_BITRATES)
+    return send_from_directory(SITE_DIR, "index.html")
+
+
+@app.route("/<path:name>")
+def site_file(name):
+    return send_from_directory(SITE_DIR, name)
+
+
+@app.get("/api/health")
+def health():
+    return jsonify(ok=True, ffmpeg=bool(shutil.which("ffmpeg")), yt_dlp=yt_dlp.version.__version__)
 
 
 @app.post("/api/info")
@@ -266,4 +301,6 @@ if __name__ == "__main__":
     if not shutil.which("ffmpeg"):
         print("WARNING: ffmpeg was not found on PATH. MP3 conversion and HD video will not work.")
     port = int(os.environ.get("PORT", 5000))
+    print(f"YouDownload helper running. Open https://vashtag.github.io/YouDownload or http://127.0.0.1:{port}")
+    print("Keep this window open while you use the site. Press Ctrl+C to stop.")
     app.run(host="127.0.0.1", port=port, debug=False, threaded=True)

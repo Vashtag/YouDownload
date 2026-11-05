@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouDownload</title>
+  <meta name="description" content="Download YouTube videos in any quality, or as MP3.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23e5322d'/><path d='M50 25v38M33 47l17 17 17-17M30 76h40' stroke='white' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>You<span>Download</span></h1>
+      <p class="sub">Paste a YouTube link, pick a quality, and download the video or an MP3.</p>
+    </header>
+
+    <div id="helper" class="helper checking">
+      <span class="dot"></span>
+      <span id="helper-text">Looking for the YouDownload helper...</span>
+      <button id="settings-btn" type="button" class="link">Settings</button>
+    </div>
+
+    <section id="setup" class="card setup" hidden>
+      <h2>One-time setup</h2>
+      <p>
+        This page runs in your browser, but YouTube doesn't let websites download videos directly.
+        A small helper program on your computer does the downloading. Start it once and keep it running while you use this page.
+      </p>
+      <ol>
+        <li>Install <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">Python 3</a> and <a href="https://ffmpeg.org/download.html" target="_blank" rel="noopener">ffmpeg</a>
+          <span class="muted">(macOS: <code>brew install ffmpeg</code>, Windows: <code>winget install ffmpeg</code>)</span>.</li>
+        <li>Download the helper: <a href="https://github.com/vashtag/YouDownload/archive/refs/heads/main.zip">YouDownload.zip</a>, then unzip it.</li>
+        <li>In a terminal, inside that folder, run:
+          <pre><code>pip install -r requirements.txt
+python app.py</code></pre>
+        </li>
+        <li>Come back here. This page connects on its own.</li>
+      </ol>
+      <p class="muted small">If your browser asks to let this site access devices on your local network, choose <b>Allow</b>. Chrome, Edge and Firefox work best. Safari blocks pages from reaching the helper.</p>
+    </section>
+
+    <section id="settings" class="card" hidden>
+      <label for="helper-url">Helper address</label>
+      <div class="row">
+        <input id="helper-url" type="url" placeholder="http://127.0.0.1:5000">
+        <button id="save-settings" type="button">Save</button>
+      </div>
+      <p class="muted small">Only change this if you run the helper on a different port or another machine.</p>
+    </section>
+
+    <form id="url-form" class="card">
+      <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." required autocomplete="off">
+      <button id="fetch-btn" type="submit">Get options</button>
+    </form>
+
+    <p id="error" class="error" hidden></p>
+
+    <section id="result" class="card" hidden>
+      <div class="video">
+        <img id="thumb" alt="">
+        <div>
+          <h2 id="title"></h2>
+          <p id="meta" class="muted"></p>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-kind="video" role="tab">Video (MP4)</button>
+        <button type="button" class="tab" data-kind="audio" role="tab">Audio (MP3)</button>
+      </div>
+
+      <div class="panel" data-panel="video">
+        <label for="quality">Quality</label>
+        <select id="quality"></select>
+      </div>
+
+      <div class="panel" data-panel="audio" hidden>
+        <label for="bitrate">Bitrate</label>
+        <select id="bitrate">
+          <option value="128">128 kbps</option>
+          <option value="192" selected>192 kbps</option>
+          <option value="256">256 kbps</option>
+          <option value="320">320 kbps</option>
+        </select>
+      </div>
+
+      <button id="download-btn" type="button" class="primary">Download</button>
+
+      <div id="progress" hidden>
+        <div class="bar"><div id="bar-fill"></div></div>
+        <p id="status" class="muted"></p>
+      </div>
+    </section>
+
+    <footer class="muted">Only download content you own or have permission to download.</footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

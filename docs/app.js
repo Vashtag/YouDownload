@@ -1,5 +1,63 @@
 const $ = (id) => document.getElementById(id);
 
+// Where the helper (app.py) is running. When this page is served by the helper
+// itself, use the same origin; on GitHub Pages, default to the local helper.
+const DEFAULT_HELPER = "http://127.0.0.1:5000";
+const servedByHelper = location.protocol === "http:" && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+
+function loadHelperUrl() {
+  if (servedByHelper) return location.origin;
+  try {
+    return localStorage.getItem("helperUrl") || DEFAULT_HELPER;
+  } catch {
+    return DEFAULT_HELPER;
+  }
+}
+let API = loadHelperUrl();
+let helperOk = false;
+
+function setHelperState(state, text) {
+  $("helper").className = `helper ${state}`;
+  $("helper-text").textContent = text;
+}
+
+async function checkHelper() {
+  try {
+    const res = await fetch(`${API}/api/health`, { cache: "no-store" });
+    const data = await res.json();
+    helperOk = true;
+    $("setup").hidden = true;
+    setHelperState(
+      data.ffmpeg ? "ok" : "warn",
+      data.ffmpeg ? "Helper connected" : "Helper connected, but ffmpeg is missing (MP3 and HD video need it)"
+    );
+  } catch {
+    if (helperOk || $("helper").classList.contains("checking")) {
+      setHelperState("down", "Helper not running");
+    }
+    helperOk = false;
+    $("setup").hidden = false;
+  }
+}
+
+checkHelper();
+setInterval(checkHelper, 4000);
+
+$("settings-btn").addEventListener("click", () => {
+  $("settings").hidden = !$("settings").hidden;
+  $("helper-url").value = API;
+});
+$("save-settings").addEventListener("click", () => {
+  const v = $("helper-url").value.trim().replace(/\/+$/, "") || DEFAULT_HELPER;
+  API = v;
+  try {
+    localStorage.setItem("helperUrl", v);
+  } catch {}
+  $("settings").hidden = true;
+  setHelperState("checking", "Looking for the YouDownload helper...");
+  checkHelper();
+});
+
 let current = null; // video info from /api/info
 let kind = "video";
 let busy = false;
@@ -18,11 +76,16 @@ function fmtDuration(s) {
 }
 
 async function postJSON(url, body) {
-  const res = await fetch(url, {
+  let res;
+  try {
+    res = await fetch(API + url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+    });
+  } catch {
+    throw new Error("Can't reach the YouDownload helper. Make sure app.py is running (see setup above).");
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
@@ -107,14 +170,14 @@ function setProgress(pct, msg) {
 
 async function poll(jobId) {
   while (true) {
-    const res = await fetch(`/api/progress/${jobId}`);
+    const res = await fetch(`${API}/api/progress/${jobId}`);
     if (!res.ok) throw new Error("Lost track of the download.");
     const job = await res.json();
     setProgress(job.progress, job.message);
     if (job.status === "error") throw new Error(job.message);
     if (job.status === "done") {
       setProgress(100, `Ready: ${job.filename}`);
-      window.location.href = `/api/file/${jobId}`; // triggers the browser's save dialog
+      window.location.href = `${API}/api/file/${jobId}`; // triggers the browser's save dialog
       return;
     }
     await new Promise((r) => setTimeout(r, 700));
