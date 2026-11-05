@@ -4,455 +4,102 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>YouDownload</title>
-  <meta name="description" content="Download YouTube videos in any quality, or as MP3.">
+  <meta name="description" content="A free desktop app to download YouTube videos in any quality, or as MP3.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23e5322d'/><path d='M50 25v38M33 47l17 17 17-17M30 76h40' stroke='white' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <style>
     :root {
-      --bg: #f5f5f7;
-      --card: #ffffff;
-      --text: #1d1d1f;
-      --muted: #6e6e73;
-      --border: #d2d2d7;
-      --accent: #e5322d;
-      --accent-hover: #c62a25;
-      --error-bg: #fdecec;
-      --ok: #1f9d55;
+      --bg: #f5f5f7; --card: #fff; --text: #1d1d1f; --muted: #6e6e73;
+      --border: #d2d2d7; --accent: #e5322d; --accent-hover: #c62a25;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #111113;
-        --card: #1c1c1f;
-        --text: #f2f2f4;
-        --muted: #9a9aa0;
-        --border: #34343a;
-        --error-bg: #3a1c1c;
-      }
+      :root { --bg: #111113; --card: #1c1c1f; --text: #f2f2f4; --muted: #9a9aa0; --border: #34343a; }
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    }
-    .wrap { max-width: 640px; margin: 0 auto; padding: 48px 16px; }
-    header { text-align: center; margin-bottom: 24px; }
-    h1 { margin: 0; font-size: 2.2rem; letter-spacing: -0.02em; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 56px 16px 32px; }
+    header { text-align: center; }
+    h1 { margin: 0; font-size: 2.6rem; letter-spacing: -0.02em; }
     h1 span { color: var(--accent); }
-    .muted { color: var(--muted); }
-    .sub { margin: 8px 0 0; color: var(--muted); }
-    .small { font-size: 0.85rem; }
+    .lead { color: var(--muted); font-size: 1.1rem; margin: 10px auto 28px; max-width: 520px; }
+    .buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px;
+      text-decoration: none; font-weight: 600; border: 1px solid var(--border); color: var(--text); background: var(--card);
+    }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.primary:hover { background: var(--accent-hover); }
+    .btn svg { width: 18px; height: 18px; }
+    .small { font-size: 0.85rem; color: var(--muted); }
+    .hint { margin-top: 12px; }
     a { color: var(--accent); }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
-    pre {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      padding: 10px 12px; margin: 6px 0 0; overflow-x: auto;
-    }
 
-    .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 16px; margin-bottom: 16px;
-    }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    input, select, button { font: inherit; }
-    input, select {
-      flex: 1 1 260px; width: 100%; padding: 10px 12px;
-      border: 1px solid var(--border); border-radius: 10px;
-      background: var(--bg); color: var(--text);
-    }
-    button {
-      padding: 10px 16px; border: 1px solid var(--border); border-radius: 10px;
-      background: var(--bg); color: var(--text); cursor: pointer;
-    }
-    button:disabled { opacity: 0.6; cursor: default; }
-    .accent { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .accent:hover:not(:disabled) { background: var(--accent-hover); }
-    .primary { width: 100%; margin-top: 16px; font-weight: 600; }
-    button.link {
-      background: none; border: none; padding: 0; color: var(--muted);
-      text-decoration: underline; font-size: 0.85rem;
-    }
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin: 0 0 6px; }
-    .field + .field { margin-top: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 40px 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .card h3 { margin: 0 0 4px; font-size: 1rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 
-    .status { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; padding: 0 4px; }
-    .status .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-    .status.ok .dot { background: var(--ok); }
-    .status span:nth-child(2) { flex: 1; overflow-wrap: anywhere; }
-
-    .setup h2 { margin: 0 0 8px; font-size: 1.1rem; }
-    .setup p { margin: 0 0 12px; }
-    .setup details { margin-top: 12px; font-size: 0.9rem; }
-    .setup summary { cursor: pointer; color: var(--muted); }
-
-    .error { background: var(--error-bg); color: var(--accent); padding: 10px 14px; border-radius: 10px; overflow-wrap: anywhere; }
-
-    .video { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
-    .video img { width: 160px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: var(--bg); }
-    .video h2 { font-size: 1.05rem; margin: 0 0 4px; overflow-wrap: anywhere; }
-    .video p { margin: 0; font-size: 0.9rem; }
-    @media (max-width: 480px) {
-      .video { flex-direction: column; }
-      .video img { width: 100%; }
-    }
-    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-    .tab { flex: 1; }
-    .tab.active { background: var(--text); color: var(--card); border-color: var(--text); }
-
-    .done { margin-top: 14px; font-size: 0.9rem; }
-    .done a.btn {
-      display: block; text-align: center; padding: 10px 16px; border-radius: 10px;
-      border: 1px solid var(--ok); color: var(--ok); text-decoration: none; font-weight: 600; margin-top: 8px;
-    }
-    footer { text-align: center; font-size: 0.8rem; margin-top: 24px; }
+    h2 { font-size: 1.25rem; margin: 32px 0 12px; }
+    ol { padding-left: 20px; margin: 0; }
+    li { margin-bottom: 8px; }
+    details { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { margin: 8px 0 0; color: var(--muted); }
+    footer { text-align: center; margin-top: 40px; }
   </style>
 </head>
 <body>
   <main class="wrap">
     <header>
       <h1>You<span>Download</span></h1>
-      <p class="sub">Paste a YouTube link, pick a quality, and download the video or an MP3.</p>
+      <p class="lead">A free app for your computer. Paste a YouTube link and save the video in any quality, or just the audio as an MP3.</p>
+      <div class="buttons">
+        <a id="win" class="btn primary" href="https://github.com/vashtag/YouDownload/releases/latest/download/YouDownload-Windows.exe">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.5v7H3zm0 13 7.5 1v-7H3zm8.5 1.1L21 21v-8.5h-9.5zm0-15.2V11.5H21V3z"/></svg>
+          Download for Windows
+        </a>
+        <a id="mac" class="btn" href="https://github.com/vashtag/YouDownload/releases/latest/download/YouDownload-macOS.zip">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.8-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.3.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.8-4.3zM13.9 5.3c.7-.9 1.2-2 1-3.3-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.2-.6 2.9-1.3z"/></svg>
+          Download for Mac
+        </a>
+      </div>
+      <p class="small hint">Free · No account · Nothing else to install · <a href="https://github.com/vashtag/YouDownload/releases">All versions</a></p>
     </header>
 
-    <div id="status" class="status">
-      <span class="dot"></span>
-      <span id="status-text">No download server set</span>
-      <button id="settings-btn" type="button" class="link">Settings</button>
-    </div>
-
-    <section id="settings" class="card setup" hidden>
-      <h2>Download server</h2>
-      <p class="small">
-        Browsers aren't allowed to download from YouTube directly, so this page uses a
-        <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener">cobalt</a> server to do it.
-        Enter the address of a cobalt instance you run, or one whose owner gave you access. This is saved in your browser only.
-      </p>
-      <div class="field">
-        <label for="api-url">Cobalt API address</label>
-        <input id="api-url" type="url" placeholder="https://cobalt.example.com" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="api-key">API key (only if the server requires one)</label>
-        <input id="api-key" type="password" placeholder="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" autocomplete="off">
-      </div>
-      <div class="row" style="margin-top:14px">
-        <button id="save-settings" type="button" class="accent">Save and test</button>
-        <button id="close-settings" type="button">Close</button>
-      </div>
-      <p id="settings-msg" class="small muted" hidden></p>
-      <details>
-        <summary>How do I run my own cobalt server?</summary>
-        <p class="small" style="margin-top:8px">
-          Follow cobalt's <a href="https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md" target="_blank" rel="noopener">instance guide</a>.
-          With Docker it's roughly:
-        </p>
-<pre><code>docker run -d -p 9000:9000 \
-  -e API_URL=https://your-domain/ \
-  -e CORS_WILDCARD=1 \
-  ghcr.io/imputnet/cobalt:11</code></pre>
-        <p class="small" style="margin-top:8px">
-          Note: the public <code>api.cobalt.tools</code> server uses bot protection and isn't meant to be used by other sites.
-        </p>
-      </details>
+    <section class="grid">
+      <div class="card"><h3>Any quality</h3><p>From 144p up to 1080p, 4K or 8K, whatever the video offers. Saved as MP4.</p></div>
+      <div class="card"><h3>MP3 audio</h3><p>Just the sound, at 128 to 320 kbps.</p></div>
+      <div class="card"><h3>Stays up to date</h3><p>The downloader updates itself, so it keeps working when YouTube changes.</p></div>
     </section>
 
-    <form id="url-form" class="card row">
-      <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." required autocomplete="off">
-      <button id="fetch-btn" type="submit" class="accent">Get options</button>
-    </form>
+    <h2>How to use it</h2>
+    <ol>
+      <li>Download the app for your computer above.</li>
+      <li>Open it. On Windows, if you see "Windows protected your PC", click <b>More info</b> then <b>Run anyway</b>. On Mac, see below.</li>
+      <li>Paste a YouTube link, pick <b>Video</b> or <b>MP3</b>, and press <b>Download</b>. Files go to your Downloads folder.</li>
+    </ol>
 
-    <p id="error" class="error" hidden></p>
+    <h2>Questions</h2>
+    <details>
+      <summary>Why does Windows or my Mac warn me about the app?</summary>
+      <p>The app isn't signed with a paid developer certificate, so your computer doesn't recognise the publisher. On Windows click <b>More info</b>, then <b>Run anyway</b>. On Mac, unzip it, move YouDownload to Applications, then right-click it and choose <b>Open</b> (or allow it in System Settings &gt; Privacy &amp; Security). You only need to do this once.</p>
+    </details>
+    <details>
+      <summary>Why is it an app and not a website?</summary>
+      <p>YouTube doesn't allow websites to download videos from your browser. An app on your computer can, without sending anything through someone else's server.</p>
+    </details>
+    <details>
+      <summary>Why is the download big?</summary>
+      <p>It includes everything it needs (the yt-dlp downloader, ffmpeg for video and MP3 conversion, and a JavaScript engine YouTube requires), so there's nothing else to install.</p>
+    </details>
 
-    <section id="result" class="card" hidden>
-      <div class="video">
-        <img id="thumb" alt="" onerror="this.hidden=true" onload="this.hidden=false">
-        <div>
-          <h2 id="title"></h2>
-          <p id="meta" class="muted"></p>
-        </div>
-      </div>
-
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab active" data-kind="video" role="tab">Video (MP4)</button>
-        <button type="button" class="tab" data-kind="audio" role="tab">Audio (MP3)</button>
-      </div>
-
-      <div class="panel" data-panel="video">
-        <label for="quality">Quality</label>
-        <select id="quality">
-          <option value="max">Best available</option>
-          <option value="2160">2160p (4K)</option>
-          <option value="1440">1440p (2K)</option>
-          <option value="1080" selected>1080p</option>
-          <option value="720">720p</option>
-          <option value="480">480p</option>
-          <option value="360">360p</option>
-          <option value="240">240p</option>
-          <option value="144">144p</option>
-        </select>
-        <p class="small muted" style="margin:6px 0 0">If a quality isn't available, the closest one is used.</p>
-      </div>
-
-      <div class="panel" data-panel="audio" hidden>
-        <label for="bitrate">Bitrate</label>
-        <select id="bitrate">
-          <option value="320">320 kbps</option>
-          <option value="256">256 kbps</option>
-          <option value="128" selected>128 kbps</option>
-          <option value="96">96 kbps</option>
-          <option value="64">64 kbps</option>
-        </select>
-      </div>
-
-      <button id="download-btn" type="button" class="accent primary">Download</button>
-      <div id="done" class="done" hidden></div>
-    </section>
-
-    <footer class="muted">Only download content you own or have permission to download.</footer>
+    <footer class="small">Only download content you own or have permission to download. Built with <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a> and <a href="https://ffmpeg.org/">ffmpeg</a>. <a href="https://github.com/vashtag/YouDownload">Source code</a></footer>
   </main>
-
   <script>
-    const $ = (id) => document.getElementById(id);
-
-    // ---- settings (stored in this browser only) ----
-    const store = {
-      get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
-      set(k, v) { try { localStorage.setItem(k, v); } catch {} },
-    };
-    let apiUrl = store.get("cobaltUrl");
-    let apiKey = store.get("cobaltKey");
-
-    function setStatus(ok, text) {
-      $("status").classList.toggle("ok", ok);
-      $("status-text").textContent = text;
-    }
-
-    function normalizeUrl(u) {
-      u = u.trim();
-      if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
-      return u.replace(/\/+$/, "");
-    }
-
-    async function testServer() {
-      if (!apiUrl) {
-        setStatus(false, "No download server set");
-        return false;
-      }
-      try {
-        const res = await fetch(apiUrl + "/", { headers: { Accept: "application/json" } });
-        const info = await res.json();
-        if (!info.cobalt) throw new Error("not cobalt");
-        const yt = !info.cobalt.services || info.cobalt.services.includes("youtube");
-        setStatus(yt, yt
-          ? `Connected to ${new URL(apiUrl).host} (cobalt ${info.cobalt.version})`
-          : `${new URL(apiUrl).host} doesn't support YouTube`);
-        return yt;
-      } catch {
-        setStatus(false, `Can't reach ${apiUrl}`);
-        return false;
-      }
-    }
-
-    function openSettings() {
-      $("api-url").value = apiUrl;
-      $("api-key").value = apiKey;
-      $("settings-msg").hidden = true;
-      $("settings").hidden = false;
-    }
-
-    $("settings-btn").addEventListener("click", () => {
-      $("settings").hidden ? openSettings() : ($("settings").hidden = true);
-    });
-    $("close-settings").addEventListener("click", () => ($("settings").hidden = true));
-    $("save-settings").addEventListener("click", async () => {
-      apiUrl = normalizeUrl($("api-url").value);
-      apiKey = $("api-key").value.trim();
-      store.set("cobaltUrl", apiUrl);
-      store.set("cobaltKey", apiKey);
-      const msg = $("settings-msg");
-      msg.hidden = false;
-      msg.textContent = "Testing...";
-      const ok = await testServer();
-      msg.textContent = ok
-        ? "Saved. You're ready to download."
-        : "Saved, but the server didn't respond like a cobalt server with YouTube support. Check the address, and that the server allows requests from other sites (CORS).";
-      if (ok) setTimeout(() => ($("settings").hidden = true), 900);
-    });
-
-    if (apiUrl) testServer();
-    else openSettings();
-
-    // ---- helpers ----
-    function showError(msg) {
-      $("error").textContent = msg;
-      $("error").hidden = !msg;
-    }
-
-    function youtubeId(url) {
-      try {
-        const u = new URL(url.trim());
-        const host = u.hostname.replace(/^(www|m|music)\./, "");
-        if (host === "youtu.be") return u.pathname.slice(1).split("/")[0] || null;
-        if (host === "youtube.com" || host === "youtube-nocookie.com") {
-          if (u.searchParams.get("v")) return u.searchParams.get("v");
-          const m = u.pathname.match(/^\/(shorts|embed|live|v)\/([\w-]{6,})/);
-          if (m) return m[2];
-        }
-      } catch {}
-      return null;
-    }
-
-    const ERRORS = {
-      "error.api.auth": "The download server needs an API key. Add one in Settings.",
-      "error.api.rate_exceeded": "Too many requests. Wait a minute and try again.",
-      "error.api.content.too_long": "This video is longer than the server allows.",
-      "error.api.content.video.unavailable": "This video is unavailable.",
-      "error.api.content.video.private": "This video is private.",
-      "error.api.content.video.age": "This video is age-restricted and can't be downloaded.",
-      "error.api.content.video.region": "This video isn't available in the server's region.",
-      "error.api.youtube.login": "YouTube is asking the server to sign in. Try again later or use another server.",
-      "error.api.link.invalid": "That doesn't look like a valid YouTube link.",
-      "error.api.fetch.fail": "The server couldn't fetch this video. Try again in a moment.",
-    };
-    function explainError(code, context) {
-      if (!code) return "Something went wrong.";
-      const key = Object.keys(ERRORS).find((k) => code.startsWith(k));
-      if (key) return ERRORS[key];
-      return `The server returned an error: ${code}`;
-    }
-
-    // ---- step 1: look up the video ----
-    let current = null;
-    let kind = "video";
-
-    $("url-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      showError("");
-      $("result").hidden = true;
-      const url = $("url").value.trim();
-      const id = youtubeId(url);
-      if (!id) return showError("Please enter a valid YouTube link.");
-
-      const btn = $("fetch-btn");
-      btn.disabled = true;
-      btn.textContent = "Loading...";
-      current = { url, id, title: "YouTube video", author: "" };
-      try {
-        // oEmbed gives us the title and channel without any API key.
-        const res = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent("https://www.youtube.com/watch?v=" + id)}`);
-        if (res.ok) {
-          const data = await res.json();
-          current.title = data.title || current.title;
-          current.author = data.author_name || "";
-        }
-      } catch {}
-      $("thumb").src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-      $("title").textContent = current.title;
-      $("meta").textContent = current.author;
-      $("done").hidden = true;
-      $("result").hidden = false;
-      btn.disabled = false;
-      btn.textContent = "Get options";
-    });
-
-    document.querySelectorAll(".tab").forEach((tab) =>
-      tab.addEventListener("click", () => {
-        kind = tab.dataset.kind;
-        document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
-        document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.dataset.panel !== kind));
-        $("done").hidden = true;
-      })
-    );
-
-    // ---- step 2: ask cobalt for a download link ----
-    $("download-btn").addEventListener("click", async () => {
-      if (!current) return;
-      showError("");
-      $("done").hidden = true;
-      if (!apiUrl) {
-        openSettings();
-        return showError("Set a download server first (see Settings above).");
-      }
-
-      const body = {
-        url: `https://www.youtube.com/watch?v=${current.id}`,
-        filenameStyle: "pretty",
-        localProcessing: "disabled",
-      };
-      if (kind === "video") {
-        Object.assign(body, {
-          downloadMode: "auto",
-          videoQuality: $("quality").value,
-          youtubeVideoCodec: "h264",
-          youtubeVideoContainer: "mp4",
-        });
-      } else {
-        Object.assign(body, {
-          downloadMode: "audio",
-          audioFormat: "mp3",
-          audioBitrate: $("bitrate").value,
-        });
-      }
-
-      const headers = { Accept: "application/json", "Content-Type": "application/json" };
-      if (apiKey) headers.Authorization = `Api-Key ${apiKey}`;
-
-      const btn = $("download-btn");
-      btn.disabled = true;
-      btn.textContent = "Preparing...";
-      try {
-        let res;
-        try {
-          res = await fetch(apiUrl + "/", { method: "POST", headers, body: JSON.stringify(body) });
-        } catch {
-          throw new Error(`Can't reach the download server (${apiUrl}). Check Settings.`);
-        }
-        const data = await res.json().catch(() => ({}));
-        handleResponse(data);
-      } catch (err) {
-        showError(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Download";
-      }
-    });
-
-    function handleResponse(data) {
-      switch (data.status) {
-        case "tunnel":
-        case "redirect":
-          return offerFile(data.url, data.filename, data.status === "redirect");
-        case "picker":
-          if (data.picker && data.picker.length) return offerFile(data.picker[0].url, data.audioFilename, true);
-          throw new Error("The server didn't return a file.");
-        case "local-processing":
-          throw new Error("This server wants the browser to process the file itself, which this page doesn't support. Try another server.");
-        case "error":
-          throw new Error(explainError(data.error && data.error.code, data.error && data.error.context));
-        default:
-          throw new Error("Unexpected response from the download server.");
-      }
-    }
-
-    function offerFile(url, filename, newTab) {
-      const done = $("done");
-      done.innerHTML = "";
-      const p = document.createElement("div");
-      p.className = "muted";
-      p.textContent = filename ? `Ready: ${filename}` : "Ready!";
-      const a = document.createElement("a");
-      a.className = "btn";
-      a.href = url;
-      if (newTab) {
-        a.target = "_blank";
-        a.rel = "noopener";
-      }
-      if (filename) a.download = filename;
-      a.textContent = "Save file";
-      done.append(p, a);
-      done.hidden = false;
-      // Start the download right away; the button stays as a fallback.
-      a.click();
+    // Put the visitor's platform first.
+    if (/Mac/i.test(navigator.platform || navigator.userAgent)) {
+      const win = document.getElementById("win"), mac = document.getElementById("mac");
+      win.classList.remove("primary"); mac.classList.add("primary");
+      mac.parentNode.insertBefore(mac, win);
     }
   </script>
 </body>

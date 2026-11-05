@@ -1,29 +1,60 @@
 # YouDownload
 
-A single-page web app for downloading YouTube videos. Paste a link and choose:
+A desktop app for downloading YouTube videos. Paste a link and choose:
 
-- **Video (MP4)** from 144p up to 4K, or "best available"
-- **Audio (MP3)** at 64 to 320 kbps
+- **Video (MP4)** in any quality the video offers (144p up to 4K/8K)
+- **Audio (MP3)** at 128, 192, 256 or 320 kbps
 
-**Live page:** https://vashtag.github.io/YouDownload
+**Download page:** https://vashtag.github.io/YouDownload
 
-Everything is in [`index.html`](index.html): no build step, no install.
+It runs entirely on your computer: no server, no account. The app bundles everything it needs:
 
-## How it works
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) does the downloading, and updates itself in the background (YouTube changes often)
+- [ffmpeg](https://ffmpeg.org/) (via `imageio-ffmpeg`) merges video and audio and converts to MP3
+- [Deno](https://deno.com/), the JavaScript runtime yt-dlp needs to handle YouTube
+- [pywebview](https://pywebview.flowrl.com/) shows the interface (`youdownload/ui/index.html`) in a native window
 
-Browsers can't download from YouTube directly (YouTube blocks cross-site requests), so the page sends the link to a [cobalt](https://github.com/imputnet/cobalt) server, which returns a download link for the chosen quality or MP3.
+## Project layout
 
-The first time you open the page, enter a cobalt server address (and API key, if it needs one) in **Settings**. It's saved in your browser only.
+| Path | What it is |
+| --- | --- |
+| `youdownload/main.py` | Opens the app window (also `--selftest <file>` for CI) |
+| `youdownload/core.py` | Download engine, called from the window's JavaScript |
+| `youdownload/updater.py` | Keeps yt-dlp up to date without rebuilding the app |
+| `youdownload/paths.py` | Locates bundled tools and the user's folders |
+| `youdownload/ui/index.html` | The app's interface |
+| `build.py` | Builds the app with PyInstaller for the current OS |
+| `index.html` | The GitHub Pages download page |
+| `.github/workflows/build.yml` | Builds Windows and macOS apps on every push; publishes them on `v*` tags |
 
-The public `api.cobalt.tools` server uses bot protection and isn't meant for other sites, so use either:
+## Run from source
 
-- **your own instance** ([guide](https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md)). It must allow requests from other sites, for example with `CORS_WILDCARD=1`, or
-- **an instance whose owner gave you access** (usually with an API key).
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+```
 
-## Publishing on GitHub Pages
+You also need [Deno](https://docs.deno.com/runtime/getting_started/installation/) on your PATH when running from source, or run `python build.py` once, which downloads it into `vendor/`. The built app includes it.
 
-In the repo on GitHub go to **Settings > Pages**, set **Source** to "Deploy from a branch", choose `main` and `/ (root)`, and save.
+## Build the app yourself
+
+```bash
+pip install -r requirements.txt pyinstaller
+python build.py
+```
+
+This creates `dist/YouDownload.exe` on Windows or `dist/YouDownload.app` on macOS. PyInstaller can only build for the OS it runs on, which is why GitHub Actions builds both.
+
+## Publishing a release
+
+1. Push a tag starting with `v`, for example `git tag v1.0.0 && git push origin v1.0.0`.
+2. GitHub Actions builds both apps and attaches `YouDownload-Windows.exe` and `YouDownload-macOS.zip` to a new release.
+3. The download page always links to the latest release.
+
+To publish the download page: **Settings > Pages**, source "Deploy from a branch", branch `main`, folder `/ (root)`.
 
 ## Note
 
-Only download videos you own or have permission to download, and respect YouTube's Terms of Service and copyright law.
+The app isn't code-signed, so Windows SmartScreen and macOS Gatekeeper show a warning the first time. Only download videos you own or have permission to download, and respect YouTube's Terms of Service and copyright law.
