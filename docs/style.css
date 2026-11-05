@@ -7,6 +7,8 @@
   --accent: #e5322d;
   --accent-hover: #c62a25;
   --error-bg: #fdecec;
+  --ok: #1f9d55;
+  --warn: #d48806;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -91,3 +93,38 @@ label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 
 #status { margin: 8px 0 0; font-size: 0.9rem; overflow-wrap: anywhere; }
 
 footer { text-align: center; font-size: 0.8rem; margin-top: 24px; }
+
+.helper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.helper .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.helper.ok .dot { background: var(--ok); }
+.helper.warn .dot { background: var(--warn); }
+.helper.down .dot { background: var(--accent); }
+.helper.checking .dot { animation: pulse 1s infinite alternate; }
+@keyframes pulse { to { opacity: 0.3; } }
+#helper-text { flex: 1; }
+button.link { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: 0.85rem; }
+
+.setup h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.setup p { margin: 0 0 10px; }
+.setup ol { margin: 0 0 10px; padding-left: 20px; }
+.setup li { margin-bottom: 8px; }
+.setup a { color: var(--accent); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
+pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 6px 0 0;
+  overflow-x: auto;
+}
+.small { font-size: 0.85rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
