@@ -1,60 +1,28 @@
 # YouDownload
 
-A small local web app for downloading YouTube videos. Paste a link and choose:
+A single-page web app for downloading YouTube videos. Paste a link and choose:
 
-- **Video (MP4)** in any quality the video offers (144p up to 4K/8K)
-- **Audio (MP3)** at 128, 192, 256 or 320 kbps
+- **Video (MP4)** from 144p up to 4K, or "best available"
+- **Audio (MP3)** at 64 to 320 kbps
 
-**Website:** https://vashtag.github.io/YouDownload
+**Live page:** https://vashtag.github.io/YouDownload
 
-The website is a static page on GitHub Pages. YouTube doesn't allow websites to download videos directly from the browser, so the page talks to a small helper (`app.py`) running on your computer. The helper uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [ffmpeg](https://ffmpeg.org/) for merging and MP3 conversion.
-
-## Requirements
-
-- Python 3.9+
-- ffmpeg on your PATH
-  - macOS: `brew install ffmpeg`
-  - Windows: `winget install ffmpeg`
-  - Debian/Ubuntu: `sudo apt install ffmpeg`
-
-## Setup
-
-```bash
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-Keep it running, then open https://vashtag.github.io/YouDownload (or http://127.0.0.1:5000, which serves the same page). The page shows a green dot once it finds the helper.
-
-If your browser asks whether the site may access devices on your local network, choose **Allow**. Chrome, Edge and Firefox work. Safari blocks https pages from reaching a local http server, so use http://127.0.0.1:5000 there.
-
-## Publishing the page (GitHub Pages)
-
-The page lives in `docs/`. In the repo on GitHub go to **Settings > Pages**, set **Source** to "Deploy from a branch", pick branch `main` and folder `/docs`, and save. It appears at https://vashtag.github.io/YouDownload after a minute.
-
-If you host the page on another domain, allow it in the helper with `EXTRA_ORIGINS=https://your.domain python app.py`.
+Everything is in [`index.html`](index.html): no build step, no install.
 
 ## How it works
 
-The helper exposes a small API (CORS-enabled for the GitHub Pages site):
+Browsers can't download from YouTube directly (YouTube blocks cross-site requests), so the page sends the link to a [cobalt](https://github.com/imputnet/cobalt) server, which returns a download link for the chosen quality or MP3.
 
-1. `GET /api/health` lets the page detect the helper.
-2. `POST /api/info` reads the video's title, thumbnail and available resolutions.
-3. `POST /api/download` starts a background job (video at a chosen height, or MP3 at a chosen bitrate).
-4. The page polls `GET /api/progress/<id>` to show a progress bar.
-5. When it's done, `GET /api/file/<id>` sends the file to your browser.
+The first time you open the page, enter a cobalt server address (and API key, if it needs one) in **Settings**. It's saved in your browser only.
 
-Finished files are kept in your system temp folder and removed after an hour.
+The public `api.cobalt.tools` server uses bot protection and isn't meant for other sites, so use either:
 
-## Troubleshooting
+- **your own instance** ([guide](https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md)). It must allow requests from other sites, for example with `CORS_WILDCARD=1`, or
+- **an instance whose owner gave you access** (usually with an API key).
 
-YouTube changes often. If downloads start failing, update yt-dlp first:
+## Publishing on GitHub Pages
 
-```bash
-pip install -U yt-dlp
-```
+In the repo on GitHub go to **Settings > Pages**, set **Source** to "Deploy from a branch", choose `main` and `/ (root)`, and save.
 
 ## Note
 
